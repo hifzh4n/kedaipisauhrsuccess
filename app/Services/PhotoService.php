@@ -30,16 +30,37 @@ class PhotoService
     public function uploadPhoto(UploadedFile $file, string $folder = 'items'): ?string
     {
         try {
+            \Log::info("Starting photo upload process", [
+                'filename' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime' => $file->getMimeType(),
+                'folder' => $folder
+            ]);
+
             // Validate file
             if (!$this->isValidImage($file)) {
+                \Log::error("Image validation failed", [
+                    'filename' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime' => $file->getMimeType()
+                ]);
                 return null;
             }
+
+            \Log::info("Image validation passed, starting processing");
 
             // Process image to square format
             $processedImage = $this->processImageToSquare($file);
             if (!$processedImage) {
+                \Log::error("Image processing to square failed", [
+                    'filename' => $file->getClientOriginalName()
+                ]);
                 return null;
             }
+
+            \Log::info("Image processed successfully", [
+                'processed_size' => strlen($processedImage)
+            ]);
 
             // Generate unique filename
             $filename = $this->generateUniqueFilename($file);
@@ -48,21 +69,38 @@ class PhotoService
             $path = $folder . '/' . $filename;
 
             // Upload to R2
-            \Log::info("Uploading processed photo to R2: {$path}");
+            \Log::info("Uploading processed photo to DigitalOcean Spaces", [
+                'path' => $path,
+                'size' => strlen($processedImage),
+                'disk' => config('filesystems.default')
+            ]);
+
             $uploaded = $this->disk->put($path, $processedImage, [
                 'ContentType' => $file->getMimeType(),
                 'CacheControl' => 'max-age=31536000', // 1 year cache
             ]);
 
             if ($uploaded) {
-                \Log::info("Successfully uploaded processed photo to R2: {$path}");
+                \Log::info("Successfully uploaded processed photo to DigitalOcean Spaces: {$path}");
                 return $path;
             } else {
-                \Log::error("Failed to upload processed photo to R2: {$path}");
+                \Log::error("Failed to upload processed photo to DigitalOcean Spaces", [
+                    'path' => $path,
+                    'disk_config' => [
+                        'default' => config('filesystems.default'),
+                        'endpoint' => config('filesystems.disks.spaces.endpoint'),
+                        'bucket' => config('filesystems.disks.spaces.bucket'),
+                    ]
+                ]);
                 return null;
             }
         } catch (\Exception $e) {
-            \Log::error('Photo upload failed: ' . $e->getMessage());
+            \Log::error('Photo upload exception caught', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return null;
         }
     }
@@ -77,12 +115,21 @@ class PhotoService
     private function processImageToSquare(UploadedFile $file, int $squareSize = null): ?string
     {
         try {
+            \Log::info("Processing image to square", [
+                'filename' => $file->getClientOriginalName()
+            ]);
+
             // Create image instance
             $image = Image::make($file->getRealPath());
 
             // Get original dimensions
             $width = $image->width();
             $height = $image->height();
+
+            \Log::info("Original image dimensions", [
+                'width' => $width,
+                'height' => $height
+            ]);
 
             // Determine the size for the square (use the larger dimension or specified size)
             if ($squareSize === null) {
@@ -112,14 +159,21 @@ class PhotoService
 
             // Crop to square first (if not already square)
             if ($width !== $height) {
+                \Log::info("Cropping image to square", [
+                    'cropWidth' => $cropWidth,
+                    'cropHeight' => $cropHeight
+                ]);
                 $image->crop($cropWidth, $cropHeight, $cropX, $cropY);
             }
 
             // Now resize to the target square size
+            \Log::info("Resizing image", ['size' => $squareSize]);
             $image->resize($squareSize, $squareSize);
 
             // Convert to the original format and get as string
             $extension = strtolower($file->getClientOriginalExtension());
+
+            \Log::info("Encoding image", ['format' => $extension]);
 
             // Determine output format based on original file
             switch ($extension) {
@@ -134,10 +188,16 @@ class PhotoService
                     return $image->encode('webp', 90)->encode();
                 default:
                     // Default to JPEG if format not recognized
+                    \Log::info("Unknown format, defaulting to JPEG");
                     return $image->encode('jpg', 90)->encode();
             }
         } catch (\Exception $e) {
-            \Log::error('Image processing failed: ' . $e->getMessage());
+            \Log::error('Image processing exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace_snippet' => substr($e->getTraceAsString(), 0, 500)
+            ]);
             return null;
         }
     }
