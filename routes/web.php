@@ -43,6 +43,11 @@ Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'inde
 Route::get('/test-r2', [TestController::class, 'testR2Connection'])->middleware('auth');
 Route::get('/test-image-deletion', [TestController::class, 'testImageDeletion'])->middleware('auth');
 
+// Diagnostic routes for troubleshooting
+Route::get('/diagnostics/image-support', [App\Http\Controllers\DiagnosticController::class, 'checkImageSupport']);
+Route::post('/diagnostics/test-image', [App\Http\Controllers\DiagnosticController::class, 'testImageProcessing']);
+
+
 // Test database backup functionality
 Route::get('/test-backup', function () {
     try {
