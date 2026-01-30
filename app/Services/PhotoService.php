@@ -14,10 +14,10 @@ class PhotoService
 
     public function __construct()
     {
-        $this->disk = Storage::disk('r2');
+        $this->disk = Storage::disk(config('filesystems.default'));
         $this->publicUrl = config('app.env') === 'production'
-            ? env('R2_PUBLIC_URL')
-            : env('R2_PUBLIC_URL'); // Use public URL for both environments
+            ? env('DO_SPACES_URL')
+            : env('DO_SPACES_URL'); // Use DigitalOcean Spaces CDN URL
     }
 
     /**
