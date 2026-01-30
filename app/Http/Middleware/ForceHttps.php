@@ -15,8 +15,8 @@ class ForceHttps
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Force HTTPS for ngrok domains
-        if ($request->getHost() === 'becoming-hardy-wallaby.ngrok-free.app') {
+        // Force HTTPS in production environments (DigitalOcean, etc.)
+        if (config('app.env') === 'production') {
             $request->server->set('HTTPS', 'on');
             $request->server->set('HTTP_X_FORWARDED_PROTO', 'https');
             $request->server->set('HTTP_X_FORWARDED_SSL', 'on');
