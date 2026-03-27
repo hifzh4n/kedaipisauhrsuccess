@@ -1,0 +1,141 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern Blue Theme - CSS Custom Properties */
+:root {
+    /* Light Theme Colors */
+    --color-primary: #3b82f6;
+    --color-primary-hover: #2563eb;
+    --color-primary-light: #dbeafe;
+    --color-primary-dark: #1d4ed8;
+
+    --color-secondary: #64748b;
+    --color-secondary-hover: #475569;
+    --color-secondary-light: #e2e8f0;
+    --color-secondary-dark: #334155;
+
+    --color-accent: #10b981;
+    --color-accent-hover: #059669;
+    --color-accent-light: #d1fae5;
+    --color-accent-dark: #047857;
+
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    --color-background: #ffffff;
+    --color-surface: #f8fafc;
+    --color-border: #e2e8f0;
+    --color-text: #1e293b;
+    --color-text-muted: #64748b;
+}
+
+/* Dark Theme Colors */
+.dark {
+    --color-primary: #60a5fa;
+    --color-primary-hover: #3b82f6;
+    --color-primary-light: #1e40af;
+    --color-primary-dark: #93c5fd;
+
+    --color-secondary: #94a3b8;
+    --color-secondary-hover: #cbd5e1;
+    --color-secondary-light: #334155;
+    --color-secondary-dark: #e2e8f0;
+
+    --color-accent: #34d399;
+    --color-accent-hover: #10b981;
+    --color-accent-light: #065f46;
+    --color-accent-dark: #6ee7b7;
+
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-error: #f87171;
+    --color-info: #60a5fa;
+
+    --color-background: #0f172a;
+    --color-surface: #1e293b;
+    --color-border: #334155;
+    --color-text: #f1f5f9;
+    --color-text-muted: #94a3b8;
+}
+
+/* Custom utility classes for theme colors */
+.bg-theme-primary {
+    background-color: var(--color-primary);
+}
+.bg-theme-primary:hover {
+    background-color: var(--color-primary-hover);
+}
+.text-theme-primary {
+    color: var(--color-primary);
+}
+.border-theme-primary {
+    border-color: var(--color-primary);
+}
+
+.bg-theme-secondary {
+    background-color: var(--color-secondary);
+}
+.bg-theme-secondary:hover {
+    background-color: var(--color-secondary-hover);
+}
+.text-theme-secondary {
+    color: var(--color-secondary);
+}
+.border-theme-secondary {
+    border-color: var(--color-secondary);
+}
+
+.bg-theme-accent {
+    background-color: var(--color-accent);
+}
+.bg-theme-accent:hover {
+    background-color: var(--color-accent-hover);
+}
+.text-theme-accent {
+    color: var(--color-accent);
+}
+.border-theme-accent {
+    border-color: var(--color-accent);
+}
+
+@layer base {
+    html {
+        font-family: "Poppins", system-ui, sans-serif;
+    }
+
+    body {
+        font-family: "Poppins", system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    .font-poppins {
+        font-family: "Poppins", system-ui, sans-serif;
+    }
+    
+    /* Modal scrolling fixes */
+    .modal-scrollable {
+        max-height: 90vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    .modal-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: 90vh;
+    }
+    
+    .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+    }
+}
