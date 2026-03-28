@@ -502,8 +502,6 @@ class ItemController extends Controller
             'retailpricerm' => 'retail_price',
             'quantity' => 'quantity',
             'qty' => 'quantity',
-            'status' => 'status',
-            'createddate' => 'created_date',
         ];
 
         // Create mapping from original header positions to field names
@@ -739,7 +737,7 @@ class ItemController extends Controller
 
     public function downloadTemplate()
     {
-        // Headers aligned with database columns for easier export/import roundtrips.
+        // Template columns used for import. Status and timestamps are system-managed.
         $headers = [
             'item_id',
             'sku_id',
@@ -753,9 +751,6 @@ class ItemController extends Controller
             'cost_price',
             'retail_price',
             'quantity',
-            'status',
-            'created_at',
-            'updated_at',
         ];
 
         $sampleData = [
@@ -772,9 +767,6 @@ class ItemController extends Controller
                 '4500.00',
                 '5999.00',
                 '10',
-                'ready_stock',
-                '2026-01-01 10:00:00',
-                '2026-01-01 10:00:00',
             ],
             [
                 'ITM-000002',
@@ -789,9 +781,6 @@ class ItemController extends Controller
                 '3200.00',
                 '4299.00',
                 '5',
-                'low_stock',
-                '2026-01-02 11:00:00',
-                '2026-01-02 11:00:00',
             ]
         ];
 
