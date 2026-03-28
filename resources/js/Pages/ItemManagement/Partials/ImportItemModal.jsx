@@ -40,7 +40,7 @@ export default function ImportItemModal({ show, onClose }) {
         try {
             const result = await downloadRouteFile(
                 route("items.download-template"),
-                "items-import-template.csv"
+                "items-import-template.xlsx"
             );
 
             if (result?.canceled) {
@@ -58,11 +58,10 @@ export default function ImportItemModal({ show, onClose }) {
                 {/* Fixed Header */}
                 <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                        Import Items from CSV
+                        Import Items from Excel
                     </h2>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        Upload a CSV file to bulk import items. Use the provided CSV template or export CSV
-                        before editing barcode values.
+                        Upload an Excel file to bulk import items. Use the provided Excel template with the correct columns.
                     </p>
                 </div>
 
@@ -76,7 +75,7 @@ export default function ImportItemModal({ show, onClose }) {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                                        📄 CSV Template
+                                        📊 Excel Template
                                     </p>
                                     <p className="text-xs text-blue-700 dark:text-blue-300">
                                         Download this template with sample data
@@ -107,11 +106,11 @@ export default function ImportItemModal({ show, onClose }) {
                         </div>
 
                         <div>
-                            <InputLabel htmlFor="file" value="CSV File" />
+                            <InputLabel htmlFor="file" value="Excel File" />
                             <input
                                 id="file"
                                 type="file"
-                                accept=".csv,.txt"
+                                accept=".xlsx"
                                 className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                 onChange={(e) =>
                                     setData("file", e.target.files[0])

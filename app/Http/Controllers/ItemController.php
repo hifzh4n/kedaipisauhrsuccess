@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
+use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
 
 class ItemController extends Controller
 {
@@ -442,15 +444,36 @@ class ItemController extends Controller
     public function bulkImport(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:csv,txt|max:5120'
+            'file' => 'required|mimes:csv,txt,xlsx|max:5120'
         ]);
 
         $file = $request->file('file');
-        $csvData = file_get_contents($file);
+        $extension = $file->getClientOriginalExtension();
+        $rows = [];
 
-        // Handle different line endings
-        $csvData = str_replace(["\r\n", "\r"], "\n", $csvData);
-        $rows = array_map('str_getcsv', explode("\n", $csvData));
+        if ($extension === 'xlsx') {
+            // Parse XLSX file
+            $reader = ReaderEntityFactory::createXLSXReader();
+            $reader->open($file->getPathname());
+            
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    $cells = $row->getCells();
+                    $rowData = [];
+                    foreach ($cells as $cell) {
+                        $rowData[] = $cell->getValue();
+                    }
+                    $rows[] = $rowData;
+                }
+                break; // Only read first sheet
+            }
+            $reader->close();
+        } else {
+            // Parse CSV file
+            $csvData = file_get_contents($file);
+            $csvData = str_replace(["\r\n", "\r"], "\n", $csvData);
+            $rows = array_map('str_getcsv', explode("\n", $csvData));
+        }
 
         // Remove empty rows
         $rows = array_filter($rows, function ($row) {
@@ -724,7 +747,7 @@ class ItemController extends Controller
 
     public function downloadTemplate()
     {
-        // Use the same header format as exportCsv for consistency
+        // Headers matching the Add New Item form fields
         $headers = [
             'Item ID',
             'SKU ID',
@@ -736,16 +759,13 @@ class ItemController extends Controller
             'Description',
             'Cost Price (RM)',
             'Retail Price (RM)',
-            'Quantity',
-            'Status',
-            'Created Date',
         ];
 
         $sampleData = [
             [
                 'ITM-000001',
                 'APL-IP15-BLK-001',
-                $this->formatBarcodeForCsv('1234567890123'),
+                '1234567890123',
                 'iPhone 15 Pro Max',
                 'Apple',
                 'iPhone 15',
@@ -753,14 +773,11 @@ class ItemController extends Controller
                 'Latest iPhone with advanced features',
                 '4500.00',
                 '5999.00',
-                '25',
-                'Ready Stock',
-                '2026-03-12 09:00:00',
             ],
             [
                 'ITM-000002',
                 'SAM-GAL-RED-002',
-                $this->formatBarcodeForCsv('2345678901234'),
+                '2345678901234',
                 'Samsung Galaxy S24',
                 'Samsung',
                 'Galaxy S24',
@@ -768,30 +785,32 @@ class ItemController extends Controller
                 'Premium Android smartphone',
                 '3200.00',
                 '4299.00',
-                '5',
-                'Low Stock',
-                '2026-03-12 09:05:00',
             ]
         ];
 
-        $filename = 'items-import-template.csv';
-        $handle = fopen('php://temp', 'w+');
-
-        // Add headers
-        fputcsv($handle, $headers);
-
-        // Add sample data
-        foreach ($sampleData as $row) {
-            fputcsv($handle, $row);
+        $filename = 'items-import-template.xlsx';
+        $filepath = storage_path('app/temp/' . $filename);
+        
+        // Create temp directory if it doesn't exist
+        if (!is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
         }
 
-        rewind($handle);
-        $content = stream_get_contents($handle);
-        fclose($handle);
+        // Create XLSX writer
+        $writer = WriterEntityFactory::createXLSXWriter();
+        $writer->openToFile($filepath);
+        
+        // Add headers
+        $writer->addRow($headers);
+        
+        // Add sample data
+        foreach ($sampleData as $row) {
+            $writer->addRow($row);
+        }
+        
+        $writer->close();
 
-        return response($content)
-            ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        return response()->download($filepath, $filename)->deleteFileAfterSend(true);
     }
 
     private function normalizeBarcodeValue(mixed $value): ?string
