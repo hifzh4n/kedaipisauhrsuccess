@@ -228,15 +228,6 @@ export default function ExportItemModal({
                             </select>
                         </div>
                     </div>
-
-                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                            <strong>Note:</strong>{" "}
-                            {exportFormat === "pdf"
-                                ? "The PDF will be generated in landscape format and include item details, pricing, and status information with summary statistics. Large exports (>1000 items) will be automatically queued for background processing."
-                                : `The ${exportFormat.toUpperCase()} file will contain all item data in spreadsheet format, suitable for importing into Excel or other applications.`}
-                        </p>
-                    </div>
                 </div>
 
                 {/* Fixed Footer */}

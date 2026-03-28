@@ -147,33 +147,6 @@ export default function DatabaseBackupForm({ databaseBackups = [], className = '
                         ))}
                     </div>
                 )}
-
-                {/* Information */}
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="flex">
-                        <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                About Database Backups
-                            </h3>
-                            <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                                <p>
-                                    Database backups are stored locally in your application's storage directory. 
-                                    Each backup contains a complete SQL dump of your database that can be imported 
-                                    into phpMyAdmin or any MySQL client for restoration.
-                                </p>
-                                <p className="mt-2">
-                                    <strong>Note:</strong> Make sure you have mysqldump installed on your server 
-                                    for this feature to work properly.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
     );

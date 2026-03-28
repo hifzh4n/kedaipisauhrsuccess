@@ -106,35 +106,6 @@ export default function ImportItemModal({ show, onClose }) {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                            <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-3">
-                                ✓ Exact CSV format:
-                            </p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {[
-                                    { name: "Item ID", example: "ITM-000001" },
-                                    { name: "SKU ID", example: "APL-IP15-001" },
-                                    { name: "Barcode", example: "1234567890" },
-                                    { name: "Item Name", example: "iPhone 15" },
-                                    { name: "Brand", example: "Apple" },
-                                    { name: "Model", example: "iPhone 15 Pro" },
-                                    { name: "Color", example: "Black" },
-                                    { name: "Description", example: "Latest model" },
-                                    { name: "Cost Price (RM)", example: "4500.00" },
-                                    { name: "Retail Price (RM)", example: "5999.00" },
-                                    { name: "Quantity", example: "25" },
-                                    { name: "Status", example: "Ready Stock" },
-                                    { name: "Created Date", example: "2026-03-12 09:00:00" },
-                                ].map((col) => (
-                                    <div key={col.name} className="text-xs text-amber-800 dark:text-amber-200">
-                                        <code className="font-mono bg-amber-100 dark:bg-amber-900 px-2 py-1 rounded">
-                                            {col.name}
-                                        </code>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
                         <div>
                             <InputLabel htmlFor="file" value="CSV File" />
                             <input
