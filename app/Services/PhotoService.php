@@ -15,9 +15,8 @@ class PhotoService
     public function __construct()
     {
         $this->disk = Storage::disk('r2');
-        $this->publicUrl = config('app.env') === 'production'
-            ? env('R2_PUBLIC_URL')
-            : env('R2_PUBLIC_URL'); // Use public URL for both environments
+        // Read from config so values still work when config is cached.
+        $this->publicUrl = rtrim((string) config('filesystems.disks.r2.url', ''), '/');
     }
 
     /**
@@ -362,7 +361,7 @@ class PhotoService
             return null;
         }
 
-        return $this->publicUrl . '/' . $path;
+        return $this->publicUrl . '/' . ltrim($path, '/');
     }
 
     /**

@@ -108,6 +108,10 @@ class Item extends Model
 
         $photoService = app(PhotoService::class);
         $baseUrl = $photoService->getPhotoUrl($this->picture);
+
+        if (!$baseUrl) {
+            return null;
+        }
         
         // Add cache busting parameter based on updated_at timestamp
         $timestamp = $this->updated_at ? $this->updated_at->timestamp : time();
