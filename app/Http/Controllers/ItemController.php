@@ -601,6 +601,28 @@ class ItemController extends Controller
                     $validationErrors[] = "Quantity must be greater than or equal to 0";
                 }
 
+                // Validate that brand, model, and color exist in attribute management
+                if (!empty($data['brand'])) {
+                    $brandExists = Brand::where('name', $data['brand'])->exists();
+                    if (!$brandExists) {
+                        $validationErrors[] = "Brand '{$data['brand']}' does not exist in attribute management";
+                    }
+                }
+
+                if (!empty($data['model'])) {
+                    $modelExists = ItemModel::where('name', $data['model'])->exists();
+                    if (!$modelExists) {
+                        $validationErrors[] = "Model '{$data['model']}' does not exist in attribute management";
+                    }
+                }
+
+                if (!empty($data['color'])) {
+                    $colorExists = Color::where('name', $data['color'])->exists();
+                    if (!$colorExists) {
+                        $validationErrors[] = "Color '{$data['color']}' does not exist in attribute management";
+                    }
+                }
+
                 // If there are validation errors, add them and continue to next row
                 if (!empty($validationErrors)) {
                     $errors[] = "Row " . ($index + 2) . ": " . implode(', ', $validationErrors);
