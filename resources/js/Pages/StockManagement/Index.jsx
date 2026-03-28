@@ -3128,12 +3128,12 @@ export default function Index({
                                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                                         <div className="flex items-center">
                                                                             <div className="flex-shrink-0 h-10 w-10">
-                                                                                {damagedItem.item.picture_url ? (
+                                                                                {damagedItem.item?.picture_url ? (
                                                                                     <img
                                                                                         className="h-10 w-10 rounded-full object-cover cursor-pointer"
                                                                                         src={damagedItem.item.picture_url}
-                                                                                        alt={damagedItem.item.item_name}
-                                                                                        onClick={() => handleImagePreview(damagedItem.item.picture_url, damagedItem.item.item_name)}
+                                                                                        alt={damagedItem.item?.item_name || 'Unknown Item'}
+                                                                                        onClick={() => handleImagePreview(damagedItem.item.picture_url, damagedItem.item?.item_name || 'Unknown Item')}
                                                                                         onError={(e) => {
                                                                                             if (e.target) {
                                                                                                 e.target.style.display = "none";
@@ -3150,13 +3150,13 @@ export default function Index({
                                                                             </div>
                                                                             <div className="ml-4">
                                                                                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                                                    {damagedItem.item.item_name}
+                                                                                    {damagedItem.item?.item_name || 'Unknown Item'}
                                                                                 </div>
                                                                                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                                                    {damagedItem.item.sku_id}
+                                                                                    {damagedItem.item?.sku_id || '-'}
                                                                                 </div>
                                                                                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                                                    {damagedItem.item.brand}
+                                                                                    {damagedItem.item?.brand || '-'}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
