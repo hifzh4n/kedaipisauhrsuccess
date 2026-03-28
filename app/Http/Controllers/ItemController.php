@@ -784,13 +784,17 @@ class ItemController extends Controller
             ]
         ];
 
-        $filename = 'items-import-template.xlsx';
-        $filepath = storage_path('app/temp/' . $filename);
+        $downloadName = 'items-import-template.xlsx';
         
         // Create temp directory if it doesn't exist
         if (!is_dir(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
         }
+
+        // Use a unique temp file path to avoid stale permission issues.
+        $tempBase = tempnam(storage_path('app/temp'), 'items-import-template-');
+        $filepath = $tempBase . '.xlsx';
+        @unlink($tempBase);
 
         // Create XLSX template using SimpleExcel.
         $writer = SimpleExcelWriter::create($filepath);
@@ -805,7 +809,7 @@ class ItemController extends Controller
 
         $writer->close();
 
-        return response()->download($filepath, $filename)->deleteFileAfterSend(true);
+        return response()->download($filepath, $downloadName)->deleteFileAfterSend(true);
     }
 
     private function normalizeBarcodeValue(mixed $value): ?string
