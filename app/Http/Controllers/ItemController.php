@@ -448,18 +448,29 @@ class ItemController extends Controller
         ]);
 
         $file = $request->file('file');
-        $extension = $file->getClientOriginalExtension();
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: '');
         $rows = [];
 
         if ($extension === 'xlsx') {
-            // Parse XLSX file without assuming a fixed header schema.
-            $rows = SimpleExcelReader::create($file->getPathname())
-                ->noHeaderRow()
-                ->getRows()
-                ->map(function (array $row) {
-                    return array_values($row);
-                })
-                ->toArray();
+            try {
+                // Parse XLSX file without assuming a fixed header schema.
+                $rows = SimpleExcelReader::create($file->getPathname(), 'xlsx')
+                    ->noHeaderRow()
+                    ->getRows()
+                    ->map(function (array $row) {
+                        return array_values($row);
+                    })
+                    ->toArray();
+            } catch (\Throwable $e) {
+                Log::error('XLSX import parse failed', [
+                    'error' => $e->getMessage(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getMimeType(),
+                    'extension' => $extension,
+                ]);
+
+                return back()->with('error', 'Unable to read the Excel file. Please use a valid .xlsx file generated from the template.');
+            }
         } else {
             // Parse CSV file
             $csvData = file_get_contents($file);
