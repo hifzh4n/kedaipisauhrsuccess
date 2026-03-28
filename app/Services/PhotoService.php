@@ -10,13 +10,15 @@ use Intervention\Image\Facades\Image;
 class PhotoService
 {
     private $disk;
+    private $diskName;
     private $publicUrl;
 
     public function __construct()
     {
-        $this->disk = Storage::disk('r2');
+        $this->diskName = (string) config('filesystems.default', 'public');
+        $this->disk = Storage::disk($this->diskName);
         // Read from config so values still work when config is cached.
-        $this->publicUrl = rtrim((string) config('filesystems.disks.r2.url', ''), '/');
+        $this->publicUrl = rtrim((string) config("filesystems.disks.{$this->diskName}.url", ''), '/');
     }
 
     /**
@@ -350,18 +352,16 @@ class PhotoService
             return null;
         }
 
-        // If R2 is not configured, try to use local storage as fallback
-        if (empty($this->publicUrl)) {
-            // Check if file exists in local storage
-            if (Storage::disk('local')->exists($path)) {
-                return Storage::disk('local')->url($path);
+        try {
+            return $this->disk->url($path);
+        } catch (\Throwable $e) {
+            // Fall back to configured public URL if the adapter cannot generate URLs.
+            if (!empty($this->publicUrl)) {
+                return $this->publicUrl . '/' . ltrim($path, '/');
             }
 
-            // If not in local storage, return a placeholder image or null
             return null;
         }
-
-        return $this->publicUrl . '/' . ltrim($path, '/');
     }
 
     /**
