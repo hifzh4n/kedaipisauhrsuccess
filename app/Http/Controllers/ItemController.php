@@ -739,18 +739,23 @@ class ItemController extends Controller
 
     public function downloadTemplate()
     {
-        // Headers matching the Add New Item form fields
+        // Headers aligned with database columns for easier export/import roundtrips.
         $headers = [
-            'Item ID',
-            'SKU ID',
-            'Barcode',
-            'Item Name',
-            'Brand',
-            'Model',
-            'Color',
-            'Description',
-            'Cost Price (RM)',
-            'Retail Price (RM)',
+            'item_id',
+            'sku_id',
+            'barcode',
+            'item_name',
+            'brand',
+            'model',
+            'color',
+            'description',
+            'picture',
+            'cost_price',
+            'retail_price',
+            'quantity',
+            'status',
+            'created_at',
+            'updated_at',
         ];
 
         $sampleData = [
@@ -763,8 +768,13 @@ class ItemController extends Controller
                 'iPhone 15',
                 'Black',
                 'Latest iPhone with advanced features',
+                '',
                 '4500.00',
                 '5999.00',
+                '10',
+                'ready_stock',
+                '2026-01-01 10:00:00',
+                '2026-01-01 10:00:00',
             ],
             [
                 'ITM-000002',
@@ -775,8 +785,13 @@ class ItemController extends Controller
                 'Galaxy S24',
                 'Red',
                 'Premium Android smartphone',
+                '',
                 '3200.00',
                 '4299.00',
+                '5',
+                'low_stock',
+                '2026-01-02 11:00:00',
+                '2026-01-02 11:00:00',
             ]
         ];
 
