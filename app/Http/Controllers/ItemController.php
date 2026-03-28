@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
-use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
+use Spatie\SimpleExcel\SimpleExcelReader;
+use Spatie\SimpleExcel\SimpleExcelWriter;
 
 class ItemController extends Controller
 {
@@ -452,22 +452,14 @@ class ItemController extends Controller
         $rows = [];
 
         if ($extension === 'xlsx') {
-            // Parse XLSX file
-            $reader = ReaderEntityFactory::createXLSXReader();
-            $reader->open($file->getPathname());
-            
-            foreach ($reader->getSheetIterator() as $sheet) {
-                foreach ($sheet->getRowIterator() as $row) {
-                    $cells = $row->getCells();
-                    $rowData = [];
-                    foreach ($cells as $cell) {
-                        $rowData[] = $cell->getValue();
-                    }
-                    $rows[] = $rowData;
-                }
-                break; // Only read first sheet
-            }
-            $reader->close();
+            // Parse XLSX file without assuming a fixed header schema.
+            $rows = SimpleExcelReader::create($file->getPathname())
+                ->noHeaderRow()
+                ->getRows()
+                ->map(function (array $row) {
+                    return array_values($row);
+                })
+                ->toArray();
         } else {
             // Parse CSV file
             $csvData = file_get_contents($file);
@@ -796,18 +788,17 @@ class ItemController extends Controller
             mkdir(storage_path('app/temp'), 0755, true);
         }
 
-        // Create XLSX writer
-        $writer = WriterEntityFactory::createXLSXWriter();
-        $writer->openToFile($filepath);
-        
-        // Add headers
+        // Create XLSX template using SimpleExcel.
+        $writer = SimpleExcelWriter::create($filepath);
+
+        // Add headers as the first row
         $writer->addRow($headers);
-        
+
         // Add sample data
         foreach ($sampleData as $row) {
             $writer->addRow($row);
         }
-        
+
         $writer->close();
 
         return response()->download($filepath, $filename)->deleteFileAfterSend(true);
