@@ -799,13 +799,12 @@ class ItemController extends Controller
         // Create XLSX template using SimpleExcel.
         $writer = SimpleExcelWriter::create($filepath);
 
-        // Add headers as the first row
-        $writer->addRow($headers);
-
-        // Add sample data
+        // Write associative rows so the header row uses actual field names.
+        $rows = [];
         foreach ($sampleData as $row) {
-            $writer->addRow($row);
+            $rows[] = array_combine($headers, $row);
         }
+        $writer->addRows($rows);
 
         $writer->close();
 
