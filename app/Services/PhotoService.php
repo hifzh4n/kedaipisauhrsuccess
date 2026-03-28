@@ -22,7 +22,7 @@ class PhotoService
     }
 
     /**
-     * Upload a photo to Cloudflare R2
+     * Upload a photo to configured storage disk
      *
      * @param UploadedFile $file
      * @param string $folder
@@ -45,21 +45,21 @@ class PhotoService
             // Generate unique filename
             $filename = $this->generateUniqueFilename($file);
 
-            // Full path in R2 bucket
+            // Full path in storage disk
             $path = $folder . '/' . $filename;
 
-            // Upload to R2
-            \Log::info("Uploading processed photo to R2: {$path}");
+            // Upload to storage disk
+            \Log::info("Uploading processed photo: {$path}");
             $uploaded = $this->disk->put($path, $processedImage, [
                 'ContentType' => $file->getMimeType(),
                 'CacheControl' => 'max-age=31536000', // 1 year cache
             ]);
 
             if ($uploaded) {
-                \Log::info("Successfully uploaded processed photo to R2: {$path}");
+                \Log::info("Successfully uploaded processed photo: {$path}");
                 return $path;
             } else {
-                \Log::error("Failed to upload processed photo to R2: {$path}");
+                \Log::error("Failed to upload processed photo: {$path}");
                 return null;
             }
         } catch (\Exception $e) {
@@ -287,21 +287,21 @@ class PhotoService
             // Generate unique filename
             $filename = $this->generateUniqueFilename($file);
 
-            // Full path in R2 bucket
+            // Full path in storage disk
             $path = $folder . '/' . $filename;
 
-            // Upload to R2
-            \Log::info("Uploading processed photo to R2: {$path}");
+            // Upload to storage disk
+            \Log::info("Uploading processed photo: {$path}");
             $uploaded = $this->disk->put($path, $processedImage, [
                 'ContentType' => $file->getMimeType(),
                 'CacheControl' => 'max-age=31536000', // 1 year cache
             ]);
 
             if ($uploaded) {
-                \Log::info("Successfully uploaded processed photo to R2: {$path}");
+                \Log::info("Successfully uploaded processed photo: {$path}");
                 return $path;
             } else {
-                \Log::error("Failed to upload processed photo to R2: {$path}");
+                \Log::error("Failed to upload processed photo: {$path}");
                 return null;
             }
         } catch (\Exception $e) {
@@ -311,7 +311,7 @@ class PhotoService
     }
 
     /**
-     * Delete a photo from Cloudflare R2
+     * Delete a photo from configured storage disk
      *
      * @param string $path
      * @return bool
@@ -324,14 +324,14 @@ class PhotoService
             if ($this->disk->exists($path)) {
                 $deleted = $this->disk->delete($path);
                 if ($deleted) {
-                    \Log::info("Successfully deleted photo from R2: {$path}");
+                    \Log::info("Successfully deleted photo: {$path}");
                     return true;
                 } else {
-                    \Log::error("Failed to delete photo from R2: {$path}");
+                    \Log::error("Failed to delete photo: {$path}");
                     return false;
                 }
             } else {
-                \Log::info("Photo does not exist in R2, considering as deleted: {$path}");
+                \Log::info("Photo does not exist in storage, considering as deleted: {$path}");
                 return true; // File doesn't exist, consider it deleted
             }
         } catch (\Exception $e) {
@@ -450,7 +450,7 @@ class PhotoService
     }
 
     /**
-     * Get file info from R2
+     * Get file info from configured storage disk
      *
      * @param string $path
      * @return array|null
@@ -475,7 +475,7 @@ class PhotoService
     }
 
     /**
-     * Check if a file exists in R2
+     * Check if a file exists in configured storage disk
      *
      * @param string $path
      * @return bool
@@ -491,7 +491,7 @@ class PhotoService
     }
 
     /**
-     * Verify that a file was actually deleted from R2
+     * Verify that a file was actually deleted from configured storage disk
      *
      * @param string $path
      * @return bool
@@ -499,15 +499,15 @@ class PhotoService
     public function verifyDeleted(string $path): bool
     {
         try {
-            // Wait a moment for R2 to process the deletion
+            // Wait a moment for storage backend to process the deletion
             sleep(1);
 
             $exists = $this->disk->exists($path);
             if (!$exists) {
-                \Log::info("Verified: Photo successfully deleted from R2: {$path}");
+                \Log::info("Verified: Photo successfully deleted: {$path}");
                 return true;
             } else {
-                \Log::warning("Verification failed: Photo still exists in R2: {$path}");
+                \Log::warning("Verification failed: Photo still exists: {$path}");
                 return false;
             }
         } catch (\Exception $e) {

@@ -10,7 +10,6 @@ use App\Http\Controllers\ItemModelController;
 use App\Http\Controllers\ColorController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,7 +62,6 @@ Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'inde
 
 // Development-only test routes
 if (app()->isLocal()) {
-    Route::get('/test-r2', [TestController::class, 'testR2Connection'])->middleware('auth');
     Route::get('/test-image-deletion', [TestController::class, 'testImageDeletion'])->middleware('auth');
 
     // Test database backup functionality
@@ -144,40 +142,6 @@ if (app()->isLocal()) {
             ], 500);
         }
     });
-
-    // Test route for debugging R2 images
-    Route::get('/test-r2-images', function () {
-    try {
-        $item = \App\Models\Item::first();
-        if (!$item) {
-            return response()->json(['error' => 'No items found']);
-        }
-
-        $photoService = app(\App\Services\PhotoService::class);
-        $r2Disk = Storage::disk('r2');
-
-        $result = [
-            'item_name' => $item->item_name,
-            'picture_path' => $item->picture,
-            'picture_url' => $item->picture_url,
-            'r2_config' => [
-                'bucket' => config('filesystems.disks.r2.bucket'),
-                'endpoint' => config('filesystems.disks.r2.endpoint'),
-                'public_url' => config('filesystems.disks.r2.url'),
-            ],
-            'file_exists_in_r2' => $r2Disk->exists($item->picture),
-            'r2_files' => $r2Disk->files('items'),
-            'generated_url' => $photoService->getPhotoUrl($item->picture),
-        ];
-
-        return response()->json($result);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-    }
-})->middleware('auth');
 
 }
 

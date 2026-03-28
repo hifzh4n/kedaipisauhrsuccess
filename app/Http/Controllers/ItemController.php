@@ -154,7 +154,7 @@ class ItemController extends Controller
                 // Set new picture path
                 $data['picture'] = $picturePath;
 
-                // Delete old picture from R2 if it exists and upload was successful
+                // Delete old picture if it exists and upload was successful
                 if ($oldPicturePath) {
                     // Use force delete with retry mechanism for better reliability
                     $deleted = $this->photoService->forceDeletePhoto($oldPicturePath);

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('items', function (Blueprint $table) {
-            // Modify picture column to handle longer R2 paths
+            // Modify picture column to handle longer storage paths
             $table->string('picture', 500)->nullable()->change();
         });
     }
