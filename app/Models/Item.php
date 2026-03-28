@@ -46,6 +46,29 @@ class Item extends Model
         static::updating(function ($item) {
             $item->updateStatus();
         });
+
+        static::updated(function ($item) {
+            $originalPicture = $item->getOriginal('picture');
+            $currentPicture = $item->picture;
+
+            if ($originalPicture && $originalPicture !== $currentPicture) {
+                try {
+                    app(PhotoService::class)->forceDeletePhoto($originalPicture);
+                } catch (\Throwable $e) {
+                    // Do not block item updates when cleanup fails.
+                }
+            }
+        });
+
+        static::deleting(function ($item) {
+            if ($item->picture) {
+                try {
+                    app(PhotoService::class)->forceDeletePhoto($item->picture);
+                } catch (\Throwable $e) {
+                    // Do not block item deletion when cleanup fails.
+                }
+            }
+        });
     }
 
     public function updateStatus()

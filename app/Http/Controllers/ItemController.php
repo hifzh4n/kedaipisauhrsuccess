@@ -147,24 +147,11 @@ class ItemController extends Controller
 
         // Handle file upload
         if ($request->hasFile('picture')) {
-            // Store old picture path for deletion after successful upload
-            $oldPicturePath = $item->picture;
-
             // Upload new picture first
             $picturePath = $this->photoService->uploadPhoto($request->file('picture'), 'items');
             if ($picturePath) {
                 // Set new picture path
                 $data['picture'] = $picturePath;
-
-                // Delete old picture if it exists and upload was successful
-                if ($oldPicturePath) {
-                    // Use force delete with retry mechanism for better reliability
-                    $deleted = $this->photoService->forceDeletePhoto($oldPicturePath);
-                    if (!$deleted) {
-                        // Log warning but don't fail the update - new image is already uploaded
-                        Log::warning("Failed to delete old image after multiple attempts: {$oldPicturePath}");
-                    }
-                }
             } else {
                 return back()->withErrors(['picture' => 'Failed to upload image. Please try again.']);
             }
@@ -205,14 +192,6 @@ class ItemController extends Controller
             'sku_id' => $item->sku_id,
             'quantity' => $item->quantity
         ];
-
-        // Delete picture file
-        if ($item->picture) {
-            $deleted = $this->photoService->forceDeletePhoto($item->picture);
-            if (!$deleted) {
-                Log::warning("Failed to delete image when deleting item {$item->id}: {$item->picture}");
-            }
-        }
 
         $item->delete();
 
