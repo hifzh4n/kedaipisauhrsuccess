@@ -353,6 +353,10 @@ class PhotoService
             return null;
         }
 
+        if ($this->diskName === 'server_images') {
+            return rtrim((string) config('app.url', ''), '/') . '/server-images/' . ltrim($path, '/');
+        }
+
         try {
             return $this->disk->url($path);
         } catch (\Throwable $e) {
