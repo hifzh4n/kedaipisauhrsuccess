@@ -209,6 +209,8 @@ class ItemController extends Controller
     public function exportPdf(Request $request)
     {
         try {
+            $this->applyPdfRuntimeLimits();
+
             // Check if this is a large export (more than 1000 items)
             $query = Item::query();
 
@@ -226,8 +228,8 @@ class ItemController extends Controller
 
             $itemCount = $query->count();
 
-            // For large datasets, use queued job
-            if ($itemCount > 1000) {
+            // Queue earlier to avoid running out of memory on direct PDF generation.
+            if ($itemCount > 300) {
                 return $this->exportPdfQueued($request);
             }
 
@@ -274,6 +276,8 @@ class ItemController extends Controller
      */
     public function exportPdfQueued(Request $request)
     {
+        $this->applyPdfRuntimeLimits();
+
         $filters = [];
 
         // Handle both JSON and form data
@@ -351,6 +355,16 @@ class ItemController extends Controller
         }
 
         abort(404, 'Export file not found');
+    }
+
+    /**
+     * Increase runtime limits for memory-intensive PDF generation.
+     */
+    private function applyPdfRuntimeLimits(): void
+    {
+        @ini_set('memory_limit', '512M');
+        @ini_set('max_execution_time', '180');
+        @set_time_limit(180);
     }
 
     public function exportCsv(Request $request)
