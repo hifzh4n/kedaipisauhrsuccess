@@ -4,7 +4,19 @@ import PrimaryButton from "@/Components/PrimaryButton";
 import SecondaryButton from "@/Components/SecondaryButton";
 import InputLabel from "@/Components/InputLabel";
 import { toast } from "@/utils/toast";
-import { downloadRouteFile, saveResponseFile } from "@/utils/desktopDownload";
+import {
+    downloadRouteFile,
+    saveResponseFile,
+} from "@/utils/desktopDownload";
+
+function normalizeSameOriginUrl(url) {
+    if (globalThis.window === undefined) {
+        return url;
+    }
+
+    const parsedUrl = new URL(url, globalThis.window.location.origin);
+    return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+}
 
 export default function ExportItemModal({
     show,
@@ -32,13 +44,16 @@ export default function ExportItemModal({
 
         exportPollingRef.current = setInterval(async () => {
             try {
-                const response = await fetch(route("items.export-status"), {
-                    headers: {
-                        Accept: "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
+                const response = await fetch(
+                    normalizeSameOriginUrl(route("items.export-status")),
+                    {
+                        headers: {
+                            Accept: "application/json",
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                        credentials: "same-origin",
                     },
-                    credentials: "same-origin",
-                });
+                );
 
                 if (!response.ok) {
                     return;
@@ -91,8 +106,9 @@ export default function ExportItemModal({
 
             let endpoint = route("items.export-pdf");
             if (exportFormat === "csv") endpoint = route("items.export-csv");
+            if (exportFormat === "xlsx") endpoint = route("items.export-xlsx");
 
-            const response = await fetch(endpoint, {
+            const response = await fetch(normalizeSameOriginUrl(endpoint), {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -106,7 +122,7 @@ export default function ExportItemModal({
                 const contentType = response.headers.get("content-type");
 
                 // If backend returns JSON, it might be a message that it's queued
-                if (contentType && contentType.includes("application/json")) {
+                if (contentType?.includes("application/json")) {
                     const data = await response.json();
                     if (data.status === 'queued' && data.filename) {
                         toast.success(data.message);
@@ -115,10 +131,10 @@ export default function ExportItemModal({
                     }
                 }
 
-                const fileExt = exportFormat === "csv" ? "csv" : "pdf";
+                const fileExt = exportFormat === "pdf" ? "pdf" : exportFormat;
                 const saveResult = await saveResponseFile(
                     response,
-                    `items-export-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.${fileExt}`
+                    `items-export-${new Date().toISOString().slice(0, 19).replaceAll(":", "-")}.${fileExt}`
                 );
 
                 if (saveResult?.canceled) {
@@ -172,6 +188,7 @@ export default function ExportItemModal({
                             >
                                 <option value="pdf">PDF Report</option>
                                 <option value="csv">CSV Spreadsheet</option>
+                                <option value="xlsx">Excel Workbook (.xlsx)</option>
                             </select>
                         </div>
 

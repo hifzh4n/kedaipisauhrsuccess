@@ -17,6 +17,7 @@ class PhotoService
     {
         $this->diskName = (string) config('filesystems.default', 'public');
         $this->disk = Storage::disk($this->diskName);
+
         // Read from config so values still work when config is cached.
         $this->publicUrl = rtrim((string) config("filesystems.disks.{$this->diskName}.url", ''), '/');
     }

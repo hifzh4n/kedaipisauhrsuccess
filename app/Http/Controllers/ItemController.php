@@ -420,6 +420,39 @@ class ItemController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function exportXlsx(Request $request)
+    {
+        $query = Item::query();
+
+        // Apply filters
+        if ($request->filled('brand')) {
+            $query->where('brand', $request->get('brand'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        $items = $query->orderBy('created_at', 'desc')->get();
+        $rows = $this->buildItemExportRows($items, false);
+
+        if (!is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $tempBase = tempnam(storage_path('app/temp'), 'items-export-');
+        $filepath = $tempBase . '.xlsx';
+        @unlink($tempBase);
+
+        $writer = SimpleExcelWriter::create($filepath);
+        $writer->addRows($rows);
+        $writer->close();
+
+        $filename = 'items-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+
+        return response()->download($filepath, $filename)->deleteFileAfterSend(true);
+    }
+
     public function bulkImport(Request $request)
     {
         $request->validate([
@@ -858,6 +891,29 @@ class ItemController extends Controller
         }
 
         return '="' . $this->normalizeBarcodeValue($barcode) . '"';
+    }
+
+    private function buildItemExportRows($items, bool $forCsv = false): array
+    {
+        return $items->map(function ($item) use ($forCsv) {
+            return [
+                'Item ID' => $item->item_id,
+                'SKU ID' => $item->sku_id,
+                'Barcode' => $forCsv
+                    ? $this->formatBarcodeForCsv($item->barcode)
+                    : $this->normalizeBarcodeValue($item->barcode),
+                'Item Name' => $item->item_name,
+                'Brand' => $item->brand,
+                'Model' => $item->model,
+                'Color' => $item->color,
+                'Description' => $item->description,
+                'Cost Price (RM)' => number_format($item->cost_price, 2),
+                'Retail Price (RM)' => number_format($item->retail_price, 2),
+                'Quantity' => $item->quantity,
+                'Status' => ucwords(str_replace('_', ' ', $item->status)),
+                'Created Date' => $item->created_at->format('Y-m-d H:i:s'),
+            ];
+        })->all();
     }
 
     private function normalizeDecimalValue(mixed $value): ?string

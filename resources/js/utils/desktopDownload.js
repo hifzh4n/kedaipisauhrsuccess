@@ -1,9 +1,9 @@
 function getDesktopBridge() {
-    if (typeof window === 'undefined') {
+    if (globalThis.window === undefined) {
         return null;
     }
 
-    return window.desktopBridge || null;
+    return globalThis.window.desktopBridge || null;
 }
 
 function getFilenameFromDisposition(contentDisposition, fallbackFilename) {
@@ -48,6 +48,15 @@ function getExtension(filename) {
     return parts.length > 1 ? parts.pop().toLowerCase() : '';
 }
 
+function normalizeSameOriginUrl(url) {
+    if (globalThis.window === undefined) {
+        return url;
+    }
+
+    const parsedUrl = new URL(url, globalThis.window.location.origin);
+    return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+}
+
 export async function saveBlobFile(blob, filename) {
     const desktopBridge = getDesktopBridge();
 
@@ -71,14 +80,14 @@ export async function saveBlobFile(blob, filename) {
         return result;
     }
 
-    const url = window.URL.createObjectURL(blob);
+    const url = globalThis.window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(link);
+    globalThis.window.URL.revokeObjectURL(url);
+    link.remove();
 
     return { ok: true, filename };
 }
@@ -94,7 +103,7 @@ export async function saveResponseFile(response, fallbackFilename) {
 }
 
 export async function downloadRouteFile(url, fallbackFilename) {
-    const response = await fetch(url, {
+    const response = await fetch(normalizeSameOriginUrl(url), {
         headers: {
             Accept: '*/*',
             'X-Requested-With': 'XMLHttpRequest',
