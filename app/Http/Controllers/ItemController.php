@@ -228,8 +228,8 @@ class ItemController extends Controller
 
             $itemCount = $query->count();
 
-            // Queue earlier to avoid running out of memory on direct PDF generation.
-            if ($itemCount > 300) {
+            // Queue only very large datasets; this server does not run queue workers by default.
+            if ($itemCount > 1000) {
                 return $this->exportPdfQueued($request);
             }
 
