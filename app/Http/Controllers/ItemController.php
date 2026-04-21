@@ -565,6 +565,8 @@ class ItemController extends Controller
 
         // Track item IDs within the CSV to prevent duplicate updates in the same file.
         $csvItemIds = [];
+        $csvSkuIds = [];
+        $csvBarcodes = [];
 
         foreach ($rows as $index => $row) {
             if (empty(array_filter($row))) continue;
@@ -651,23 +653,23 @@ class ItemController extends Controller
                     $validationErrors[] = "Quantity must be greater than or equal to 0";
                 }
 
-                // Validate that brand, model, and color exist in attribute management
+                // Validate that brand, model, and color exist in attribute management (case-insensitive)
                 if (!empty($data['brand'])) {
-                    $brandExists = Brand::where('name', $data['brand'])->exists();
+                    $brandExists = Brand::whereRaw('LOWER(name) = ?', [mb_strtolower($data['brand'])])->exists();
                     if (!$brandExists) {
                         $validationErrors[] = "Brand '{$data['brand']}' does not exist in attribute management";
                     }
                 }
 
                 if (!empty($data['model'])) {
-                    $modelExists = ItemModel::where('name', $data['model'])->exists();
+                    $modelExists = ItemModel::whereRaw('LOWER(name) = ?', [mb_strtolower($data['model'])])->exists();
                     if (!$modelExists) {
                         $validationErrors[] = "Model '{$data['model']}' does not exist in attribute management";
                     }
                 }
 
                 if (!empty($data['color'])) {
-                    $colorExists = Color::where('name', $data['color'])->exists();
+                    $colorExists = Color::whereRaw('LOWER(name) = ?', [mb_strtolower($data['color'])])->exists();
                     if (!$colorExists) {
                         $validationErrors[] = "Color '{$data['color']}' does not exist in attribute management";
                     }
@@ -695,10 +697,62 @@ class ItemController extends Controller
                     continue;
                 }
 
-                $csvItemIds[] = $resolvedItemId;
+                if ($resolvedSkuId !== null && in_array($resolvedSkuId, $csvSkuIds)) {
+                    $errors[] = "Row " . ($index + 2) . ": SKU ID '{$resolvedSkuId}' is duplicated in the CSV file";
+                    continue;
+                }
 
-                // Find existing item by Item ID only.
+                if ($resolvedBarcode !== null && in_array($resolvedBarcode, $csvBarcodes)) {
+                    $errors[] = "Row " . ($index + 2) . ": Barcode '{$resolvedBarcode}' is duplicated in the CSV file";
+                    continue;
+                }
+
+                $csvItemIds[] = $resolvedItemId;
+                if ($resolvedSkuId !== null) {
+                    $csvSkuIds[] = $resolvedSkuId;
+                }
+                if ($resolvedBarcode !== null) {
+                    $csvBarcodes[] = $resolvedBarcode;
+                }
+
+                // Find existing item by Item ID first, then fallback to SKU/Barcode for idempotent imports.
                 $existingItem = Item::where('item_id', $resolvedItemId)->first();
+
+                if (!$existingItem && $resolvedSkuId !== null) {
+                    $existingItem = Item::where('sku_id', $resolvedSkuId)->first();
+                }
+
+                if (!$existingItem && $resolvedBarcode !== null) {
+                    $existingItem = Item::where('barcode', $resolvedBarcode)->first();
+                }
+
+                $skuConflict = null;
+                if ($resolvedSkuId !== null) {
+                    $skuConflict = Item::where('sku_id', $resolvedSkuId)
+                        ->when($existingItem, function ($query) use ($existingItem) {
+                            $query->where('id', '!=', $existingItem->id);
+                        })
+                        ->first();
+                }
+
+                $barcodeConflict = null;
+                if ($resolvedBarcode !== null) {
+                    $barcodeConflict = Item::where('barcode', $resolvedBarcode)
+                        ->when($existingItem, function ($query) use ($existingItem) {
+                            $query->where('id', '!=', $existingItem->id);
+                        })
+                        ->first();
+                }
+
+                if ($skuConflict) {
+                    $errors[] = "Row " . ($index + 2) . ": SKU ID '{$resolvedSkuId}' is already used by item '{$skuConflict->item_id}'";
+                    continue;
+                }
+
+                if ($barcodeConflict) {
+                    $errors[] = "Row " . ($index + 2) . ": Barcode '{$resolvedBarcode}' is already used by item '{$barcodeConflict->item_id}'";
+                    continue;
+                }
 
                 // Convert numeric fields if provided
                 $costPrice = isset($data['cost_price']) && $data['cost_price'] !== '' ? floatval($data['cost_price']) : null;
@@ -723,7 +777,7 @@ class ItemController extends Controller
                         $existingItem->color = $data['color'];
                     }
                     if (array_key_exists('description', $data)) {
-                        $existingItem->description = $data['description'] !== '' ? $data['description'] : null;
+                        $existingItem->description = $data['description'] !== '' ? $data['description'] : $existingItem->description;
                     }
                     if ($costPrice !== null) {
                         $existingItem->cost_price = $costPrice;
@@ -748,7 +802,7 @@ class ItemController extends Controller
                         'brand' => (isset($data['brand']) && $data['brand'] !== '') ? $data['brand'] : 'Unknown',
                         'model' => (isset($data['model']) && $data['model'] !== '') ? $data['model'] : 'Unknown',
                         'color' => (isset($data['color']) && $data['color'] !== '') ? $data['color'] : 'No Color',
-                        'description' => array_key_exists('description', $data) ? ($data['description'] !== '' ? $data['description'] : null) : null,
+                        'description' => (isset($data['description']) && $data['description'] !== '') ? $data['description'] : 'Imported via bulk import',
                         'cost_price' => $costPrice ?? 0,
                         'retail_price' => $retailPrice ?? 0,
                         'quantity' => $quantity ?? 0,
