@@ -13,6 +13,7 @@ use App\Services\PhotoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -763,8 +764,17 @@ class ItemController extends Controller
         }
 
         $totalRows = count($rows);
+        $importErrorCacheKey = 'item_import_errors_user_' . auth()->id();
 
         if (!empty($errors)) {
+            Cache::put($importErrorCacheKey, [
+                'generated_at' => now()->toDateTimeString(),
+                'total_rows' => $totalRows,
+                'imported_rows' => $imported,
+                'failed_rows' => count($errors),
+                'errors' => $errors,
+            ], now()->addHours(24));
+
             Log::warning('Item bulk import row validation errors', [
                 'user_id' => auth()->id(),
                 'total_rows' => $totalRows,
@@ -772,6 +782,8 @@ class ItemController extends Controller
                 'failed_rows' => count($errors),
                 'errors' => $errors,
             ]);
+        } else {
+            Cache::forget($importErrorCacheKey);
         }
 
         if ($imported > 0) {
@@ -804,6 +816,42 @@ class ItemController extends Controller
             }
             return back()->with('error', $errorMessage);
         }
+    }
+
+    public function importErrors(Request $request)
+    {
+        $cacheKey = 'item_import_errors_user_' . auth()->id();
+        $payload = Cache::get($cacheKey, [
+            'generated_at' => null,
+            'total_rows' => 0,
+            'imported_rows' => 0,
+            'failed_rows' => 0,
+            'errors' => [],
+        ]);
+
+        $parsedErrors = collect($payload['errors'] ?? [])->map(function ($error, $index) {
+            $rowNumber = null;
+            $message = $error;
+
+            if (preg_match('/^Row\s+(\d+):\s*(.+)$/', $error, $matches)) {
+                $rowNumber = (int) $matches[1];
+                $message = $matches[2];
+            }
+
+            return [
+                'index' => $index + 1,
+                'row' => $rowNumber,
+                'message' => $message,
+            ];
+        })->all();
+
+        return response()->view('items.import-errors', [
+            'generatedAt' => $payload['generated_at'] ?? null,
+            'totalRows' => (int) ($payload['total_rows'] ?? 0),
+            'importedRows' => (int) ($payload['imported_rows'] ?? 0),
+            'failedRows' => (int) ($payload['failed_rows'] ?? 0),
+            'errors' => $parsedErrors,
+        ]);
     }
 
     public function downloadTemplate()

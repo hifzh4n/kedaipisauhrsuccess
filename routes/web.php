@@ -177,6 +177,7 @@ Route::middleware(['auth', 'staff'])->group(function () {
     Route::post('items/export-csv', [ItemController::class, 'exportCsv'])->name('items.export-csv');
     Route::post('items/export-xlsx', [ItemController::class, 'exportXlsx'])->name('items.export-xlsx');
     Route::post('items/bulk-import', [ItemController::class, 'bulkImport'])->name('items.bulk-import');
+    Route::get('items/import-errors', [ItemController::class, 'importErrors'])->name('items.import-errors');
 
     // Resource routes
     Route::resource('items', ItemController::class);
