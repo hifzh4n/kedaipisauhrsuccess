@@ -13,11 +13,11 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
-        User::create([
+        User::updateOrCreate([
+            'email' => 'hrknivesofficial@gmail.com',
+        ], [
             'first_name' => 'HR',
             'last_name' => 'Knives',
-            'email' => 'hrknivesofficial@gmail.com',
             'password' => Hash::make('Hr01012019@'),
             'role' => 'admin',
             'status' => 'active',
