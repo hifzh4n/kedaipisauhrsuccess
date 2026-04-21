@@ -84,7 +84,7 @@ class ItemController extends Controller
         $request->validate([
             'item_id' => 'required|string',
             'sku_id' => 'required|string|unique:items,sku_id',
-            'barcode' => 'required|string|unique:items,barcode',
+            'barcode' => 'required|string',
             'item_name' => 'required|string|max:255',
             'brand' => 'required|string',
             'model' => 'required|string',
@@ -133,7 +133,7 @@ class ItemController extends Controller
         $request->validate([
             'item_id' => 'required|string',
             'sku_id' => 'required|string|unique:items,sku_id,' . $item->id,
-            'barcode' => 'required|string|unique:items,barcode,' . $item->id,
+            'barcode' => 'required|string',
             'item_name' => 'required|string|max:255',
             'brand' => 'required|string',
             'model' => 'required|string',
@@ -566,7 +566,6 @@ class ItemController extends Controller
         // Track item IDs within the CSV to prevent duplicate updates in the same file.
         $csvItemIds = [];
         $csvSkuIds = [];
-        $csvBarcodes = [];
 
         foreach ($rows as $index => $row) {
             if (empty(array_filter($row))) continue;
@@ -702,28 +701,16 @@ class ItemController extends Controller
                     continue;
                 }
 
-                if ($resolvedBarcode !== null && in_array($resolvedBarcode, $csvBarcodes)) {
-                    $errors[] = "Row " . ($index + 2) . ": Barcode '{$resolvedBarcode}' is duplicated in the CSV file";
-                    continue;
-                }
-
                 $csvItemIds[] = $resolvedItemId;
                 if ($resolvedSkuId !== null) {
                     $csvSkuIds[] = $resolvedSkuId;
                 }
-                if ($resolvedBarcode !== null) {
-                    $csvBarcodes[] = $resolvedBarcode;
-                }
 
-                // Find existing item by Item ID first, then fallback to SKU/Barcode for idempotent imports.
+                // Find existing item by Item ID first, then fallback to SKU for idempotent imports.
                 $existingItem = Item::where('item_id', $resolvedItemId)->first();
 
                 if (!$existingItem && $resolvedSkuId !== null) {
                     $existingItem = Item::where('sku_id', $resolvedSkuId)->first();
-                }
-
-                if (!$existingItem && $resolvedBarcode !== null) {
-                    $existingItem = Item::where('barcode', $resolvedBarcode)->first();
                 }
 
                 $skuConflict = null;
@@ -735,22 +722,8 @@ class ItemController extends Controller
                         ->first();
                 }
 
-                $barcodeConflict = null;
-                if ($resolvedBarcode !== null) {
-                    $barcodeConflict = Item::where('barcode', $resolvedBarcode)
-                        ->when($existingItem, function ($query) use ($existingItem) {
-                            $query->where('id', '!=', $existingItem->id);
-                        })
-                        ->first();
-                }
-
                 if ($skuConflict) {
                     $errors[] = "Row " . ($index + 2) . ": SKU ID '{$resolvedSkuId}' is already used by item '{$skuConflict->item_id}'";
-                    continue;
-                }
-
-                if ($barcodeConflict) {
-                    $errors[] = "Row " . ($index + 2) . ": Barcode '{$resolvedBarcode}' is already used by item '{$barcodeConflict->item_id}'";
                     continue;
                 }
 
