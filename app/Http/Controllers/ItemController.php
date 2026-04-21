@@ -760,8 +760,7 @@ class ItemController extends Controller
                 $quantity = isset($data['quantity']) && $data['quantity'] !== '' ? (int)floatval($data['quantity']) : null;
 
                 if ($existingItem) {
-                    // Update only provided fields; preserve existing values for missing columns.
-                    $existingItem->item_id = $resolvedItemId ?? $existingItem->item_id;
+                    // Keep item_id immutable for existing rows because stock tables reference it via FK.
                     $existingItem->sku_id = $resolvedSkuId ?? $existingItem->sku_id;
                     $existingItem->barcode = $resolvedBarcode ?? $existingItem->barcode;
                     if (isset($data['item_name']) && $data['item_name'] !== '') {
