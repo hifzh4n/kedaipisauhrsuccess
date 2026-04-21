@@ -499,7 +499,7 @@ class ItemController extends Controller
             }
         } else {
             // Parse CSV file
-            $csvData = file_get_contents($file);
+            $csvData = file_get_contents($file->getPathname());
             $csvData = str_replace(["\r\n", "\r"], "\n", $csvData);
             $rows = array_map('str_getcsv', explode("\n", $csvData));
         }
@@ -507,7 +507,7 @@ class ItemController extends Controller
         // Remove empty rows
         $rows = array_filter($rows, function ($row) {
             return !empty(array_filter($row, function ($cell) {
-                return trim($cell) !== '';
+                return $this->normalizeImportCellValue($cell) !== '';
             }));
         });
 
@@ -520,7 +520,7 @@ class ItemController extends Controller
 
         // Normalize headers: lowercase and remove all non-alphanumeric characters
         $normalizedHeaders = array_map(function ($h) {
-            return preg_replace('/[^a-z0-9]/', '', strtolower(trim($h)));
+            return preg_replace('/[^a-z0-9]/', '', strtolower($this->normalizeImportCellValue($h)));
         }, $header);
 
         // Map of normalized keys to field names
@@ -550,7 +550,9 @@ class ItemController extends Controller
         }
 
         if (empty($headerMapping)) {
-            $foundHeaders = array_filter($originalHeader, function($h) { return !empty(trim($h)); });
+            $foundHeaders = array_filter($originalHeader, function($h) {
+                return $this->normalizeImportCellValue($h) !== '';
+            });
             $headerInfo = !empty($foundHeaders)
                 ? 'Found columns: ' . implode(', ', $foundHeaders) . '. '
                 : 'No valid column headers found. ';
@@ -571,7 +573,7 @@ class ItemController extends Controller
                 $data = [];
                 foreach ($row as $i => $value) {
                     if (isset($headerMapping[$i])) {
-                        $data[$headerMapping[$i]] = trim($value);
+                        $data[$headerMapping[$i]] = $this->normalizeImportCellValue($value);
                     }
                 }
 
@@ -755,7 +757,7 @@ class ItemController extends Controller
                 }
 
                 $imported++;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $errors[] = "Row " . ($index + 2) . ": " . $e->getMessage();
             }
         }
@@ -965,6 +967,27 @@ class ItemController extends Controller
         }
 
         return $normalized;
+    }
+
+    private function normalizeImportCellValue(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if (is_scalar($value)) {
+            return trim((string) $value);
+        }
+
+        if (is_object($value) && method_exists($value, '__toString')) {
+            return trim((string) $value);
+        }
+
+        return '';
     }
 
     /**
