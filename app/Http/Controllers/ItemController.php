@@ -764,6 +764,16 @@ class ItemController extends Controller
 
         $totalRows = count($rows);
 
+        if (!empty($errors)) {
+            Log::warning('Item bulk import row validation errors', [
+                'user_id' => auth()->id(),
+                'total_rows' => $totalRows,
+                'imported_rows' => $imported,
+                'failed_rows' => count($errors),
+                'errors' => $errors,
+            ]);
+        }
+
         if ($imported > 0) {
             $message = "Successfully imported {$imported} out of {$totalRows} items.";
             if (!empty($errors)) {
