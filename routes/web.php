@@ -172,10 +172,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
 Route::middleware(['auth', 'staff'])->group(function () {
     // Custom routes must come before resource routes
     Route::get('items/download-template', [ItemController::class, 'downloadTemplate'])->name('items.download-template');
-    Route::post('items/export-pdf', [ItemController::class, 'exportPdf'])->name('items.export-pdf');
+    Route::match(['get', 'post'], 'items/export-pdf', [ItemController::class, 'exportPdf'])->name('items.export-pdf');
     Route::get('items/export-status', [ItemController::class, 'checkExportStatus'])->name('items.export-status');
-    Route::post('items/export-csv', [ItemController::class, 'exportCsv'])->name('items.export-csv');
-    Route::post('items/export-xlsx', [ItemController::class, 'exportXlsx'])->name('items.export-xlsx');
+    Route::match(['get', 'post'], 'items/export-csv', [ItemController::class, 'exportCsv'])->name('items.export-csv');
+    Route::match(['get', 'post'], 'items/export-xlsx', [ItemController::class, 'exportXlsx'])->name('items.export-xlsx');
     Route::post('items/bulk-import', [ItemController::class, 'bulkImport'])->name('items.bulk-import');
     Route::get('items/import-errors', [ItemController::class, 'importErrors'])->name('items.import-errors');
 

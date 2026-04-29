@@ -154,10 +154,8 @@ export default function Index({
                     const updatedItem = {
                         ...item,
                         ...updatedData,
-                        // Force immediate image refresh by adding a unique timestamp
-                        picture_url: updatedData.picture ?
-                            `/storage/${updatedData.picture}?v=${Date.now()}` :
-                            item.picture_url
+                        // Preserve the backend-generated public URL instead of guessing a storage path client-side.
+                        picture_url: updatedData.picture_url || item.picture_url
                     };
 
                     // Force the image element to reload by updating the key

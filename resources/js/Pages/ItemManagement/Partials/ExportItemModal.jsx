@@ -18,6 +18,22 @@ function normalizeSameOriginUrl(url) {
     return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
 }
 
+function buildExportUrl(url, params = {}) {
+    if (globalThis.window === undefined) {
+        return url;
+    }
+
+    const parsedUrl = new URL(url, globalThis.window.location.origin);
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            parsedUrl.searchParams.set(key, value);
+        }
+    });
+
+    return normalizeSameOriginUrl(parsedUrl.toString());
+}
+
 export default function ExportItemModal({
     show,
     onClose,
@@ -97,25 +113,17 @@ export default function ExportItemModal({
         setIsExporting(true);
 
         try {
-            const formData = new FormData();
-            Object.keys(exportFilters).forEach(key => {
-                if (exportFilters[key]) {
-                    formData.append(key, exportFilters[key]);
-                }
-            });
-
             let endpoint = route("items.export-pdf");
             if (exportFormat === "csv") endpoint = route("items.export-csv");
             if (exportFormat === "xlsx") endpoint = route("items.export-xlsx");
 
-            const response = await fetch(normalizeSameOriginUrl(endpoint), {
-                method: 'POST',
-                body: formData,
+            const response = await fetch(buildExportUrl(endpoint, exportFilters), {
+                method: "GET",
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    Accept: "*/*",
+                    "X-Requested-With": "XMLHttpRequest",
                 },
-                credentials: 'same-origin'
+                credentials: "same-origin",
             });
 
             if (response.ok) {
